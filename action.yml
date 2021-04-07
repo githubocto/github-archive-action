@@ -1,5 +1,5 @@
-name: 'Flat Data'
-description: 'The GitHub action which powers data fetching for Flat'
+name: 'GitHub Archive Action'
+description: 'It exports your GitHub data to a SQLite database in a branch of your repository'
 author: 'GitHub OCTO'
 inputs:
   branch:
