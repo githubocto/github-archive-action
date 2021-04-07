@@ -43,8 +43,11 @@ async function run() {
     ]);
     core.debug('Configured git user.name/user.email');
     // Create the oprhan github-meta branch if it doesn't exist
-    const output = child_process_1.execSync(`git branch --list main`).toString().trim();
-    console.log(output === '');
+    const branch = core.getInput('branch');
+    const branchExists = child_process_1.execSync(`git branch --list ${branch}`).toString().trim() !== '';
+    if (!branchExists) {
+        core.info(`No ${branch} branch exists, creating...`);
+    }
     core.endGroup();
 }
 run().catch(error => {

@@ -19,9 +19,13 @@ async function run(): Promise<void> {
   core.debug('Configured git user.name/user.email')
 
   // Create the oprhan github-meta branch if it doesn't exist
+  const branch = core.getInput('branch')
+  const branchExists =
+    execSync(`git branch --list ${branch}`).toString().trim() !== ''
 
-  const output = execSync(`git branch --list main`).toString().trim()
-  console.log(output === '')
+  if (!branchExists) {
+    core.info(`No ${branch} branch exists, creating...`)
+  }
 
   core.endGroup()
 }
