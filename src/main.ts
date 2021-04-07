@@ -1,8 +1,9 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import { exec } from '@actions/exec'
 import { execSync } from 'child_process'
 import sqlite3 from 'sqlite3'
-import { Database, open } from 'sqlite'
+import {  open } from 'sqlite'
 
 const dbfile = 'github-archive.db'
 const events = [
@@ -16,8 +17,7 @@ async function run(): Promise<void> {
   core.info(
     '[INFO] Usage https://github.com/githubocto/github-archive-action#readme'
   )
-
-  core.startGroup('Setup')
+  core.core.startGroup('Setup')
   // Configure git user/email
   const username = 'github-archive-action'
   await exec('git', ['config', 'user.name', username])
@@ -43,6 +43,9 @@ async function run(): Promise<void> {
       '-m',
       `Creating ${branch} branch`,
     ])
+  } else {
+    core.info(`Checking out ${branch}`)
+    await exec('git', ['checkout', branch])
   }
 
   // open the database
@@ -64,14 +67,13 @@ async function run(): Promise<void> {
   core.startGroup('Capture event')
   for await (const e of events) {
     core.debug(`Checking for "${e}" event...`)
-    const payload = core.getInput(e)
-    if (payload === '') {
-      // no event
+    if (github.context.eventName !== e) {
+      // not this event
       continue
     }
     await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
       e,
-      payload,
+      github.context.payload,
     })
     core.info(`Captured ${e} event`)
   }
