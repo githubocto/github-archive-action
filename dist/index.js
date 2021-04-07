@@ -89,7 +89,7 @@ async function run() {
         const payload = core.getInput(e);
         if (payload === '') {
             // no event
-            return;
+            continue;
         }
         await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
             e,
@@ -102,7 +102,7 @@ async function run() {
     await db.close();
     await exec_1.exec('git', ['add', dbfile]);
     await exec_1.exec('git', ['commit', '-m', 'Adding data to repo']);
-    await exec_1.exec('git', ['push']);
+    await exec_1.exec('git', ['push', 'origin', branch]);
     core.endGroup();
 }
 run().catch(error => {
