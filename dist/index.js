@@ -72,7 +72,8 @@ async function run() {
     }
     else {
         core.info(`Checking out ${branch}`);
-        await exec_1.exec('git', ['checkout', branch]);
+        await exec_1.exec('git', ['checkout', '-t', `origin/${branch}`]);
+        await exec_1.exec('git', ['pull']);
     }
     // open the database
     const db = await sqlite_1.open({
