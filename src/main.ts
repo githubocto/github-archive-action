@@ -3,7 +3,7 @@ import * as github from '@actions/github'
 import { exec } from '@actions/exec'
 import { execSync } from 'child_process'
 import sqlite3 from 'sqlite3'
-import {  open } from 'sqlite'
+import { open } from 'sqlite'
 
 const dbfile = 'github-archive.db'
 const events = [
@@ -17,7 +17,7 @@ async function run(): Promise<void> {
   core.info(
     '[INFO] Usage https://github.com/githubocto/github-archive-action#readme'
   )
-  core.core.startGroup('Setup')
+  core.startGroup('Setup')
   // Configure git user/email
   const username = 'github-archive-action'
   await exec('git', ['config', 'user.name', username])
@@ -73,7 +73,7 @@ async function run(): Promise<void> {
     }
     await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
       e,
-      github.context.payload,
+      payload: github.context.payload,
     })
     core.info(`Captured ${e} event`)
   }
