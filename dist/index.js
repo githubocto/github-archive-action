@@ -79,7 +79,7 @@ async function run() {
   CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY,
     timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    kind TEXT NOT NULL
+    kind TEXT NOT NULL,
     event TEXT NOT NULL
   );`);
     core.endGroup();
