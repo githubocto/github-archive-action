@@ -97,7 +97,7 @@ async function run() {
         }
         await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
             e,
-            payload: github.context.payload,
+            payload: JSON.stringify(github.context.payload),
         });
         core.info(`Captured ${e} event`);
     }
