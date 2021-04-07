@@ -44,11 +44,11 @@ async function run(): Promise<void> {
   })
 
   await db.run(`
-  CREATE TABLE IF NOT EXISTS issues
+  CREATE TABLE IF NOT EXISTS issues (
     id INTEGER PRIMARY KEY,
     timestamp TEXT NOT NULL,
     event TEXT NOT NULL
-  `)
+  );`)
   core.endGroup()
 
   await db.close()
