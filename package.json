@@ -23,6 +23,7 @@
     "@actions/exec": "^1.0.4",
     "@actions/github": "^4.0.0",
     "axios": "^0.21.1",
+    "sqlite": "^4.0.21",
     "sqlite3": "^5.0.2",
     "typeorm": "^0.2.31",
     "zod": "^3.0.0-alpha.4"

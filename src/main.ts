@@ -1,6 +1,8 @@
 import * as core from '@actions/core'
 import { exec } from '@actions/exec'
 import { execSync } from 'child_process'
+import sqlite3 from 'sqlite3'
+import { open } from 'sqlite'
 
 async function run(): Promise<void> {
   core.info(
@@ -25,9 +27,31 @@ async function run(): Promise<void> {
 
   if (!branchExists) {
     core.info(`No ${branch} branch exists, creating...`)
+    await exec('git', ['checkout', '--orphan', branch])
+    await exec('git', ['rm', '-rf', '.'])
+    await exec('git', [
+      'commit',
+      '--allow-empty',
+      '-m',
+      `Creating ${branch} branch`,
+    ])
   }
 
+  // open the database
+  const db = await open({
+    filename: 'github-archive.db',
+    driver: sqlite3.Database,
+  })
+
+  await db.run(`
+  CREATE TABLE IF NOT EXISTS issues
+    id INTEGER PRIMARY KEY,
+    timestamp TEXT NOT NULL,
+    event TEXT NOT NULL
+  `)
   core.endGroup()
+
+  await db.close()
 }
 
 run().catch(error => {
