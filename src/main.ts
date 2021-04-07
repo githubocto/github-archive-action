@@ -45,7 +45,8 @@ async function run(): Promise<void> {
     ])
   } else {
     core.info(`Checking out ${branch}`)
-    await exec('git', ['checkout', branch])
+    await exec('git', ['checkout', '-t', `origin/${branch}`])
+    await exec('git', ['pull'])
   }
 
   // open the database
