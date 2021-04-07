@@ -67,7 +67,7 @@ async function run(): Promise<void> {
     const payload = core.getInput(e)
     if (payload === '') {
       // no event
-      return
+      continue
     }
     await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
       e,
@@ -81,7 +81,7 @@ async function run(): Promise<void> {
   await db.close()
   await exec('git', ['add', dbfile])
   await exec('git', ['commit', '-m', 'Adding data to repo'])
-  await exec('git', ['push'])
+  await exec('git', ['push', 'origin', branch])
   core.endGroup()
 }
 
