@@ -33,7 +33,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const exec_1 = __nccwpck_require__(1514);
-const child_process_1 = __nccwpck_require__(3129);
 const sqlite3_1 = __importDefault(__nccwpck_require__(4946));
 const sqlite_1 = __nccwpck_require__(2515);
 const dbfile = 'github-archive.db';
@@ -58,8 +57,14 @@ async function run() {
     core.debug('Configured git user.name/user.email');
     // Create the oprhan github-meta branch if it doesn't exist
     const branch = core.getInput('branch');
-    const branchExists = child_process_1.execSync(`git branch --list ${branch}`).toString().trim() !== '';
-    if (!branchExists) {
+    const branchExists = await exec_1.exec('git', [
+        'fetch',
+        'origin',
+        branch,
+        '--depth',
+        '1',
+    ]);
+    if (branchExists !== 0) {
         core.info(`No ${branch} branch exists, creating...`);
         await exec_1.exec('git', ['checkout', '--orphan', branch]);
         await exec_1.exec('git', ['rm', '-rf', '.']);
@@ -73,7 +78,6 @@ async function run() {
     else {
         core.info(`Checking out ${branch}`);
         await exec_1.exec('git', ['checkout', '-t', `origin/${branch}`]);
-        await exec_1.exec('git', ['pull']);
     }
     // open the database
     const db = await sqlite_1.open({
