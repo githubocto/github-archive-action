@@ -1,0 +1,40 @@
+{
+  "name": "flat",
+  "version": "1.2.0",
+  "description": "The GitHub action which powers data fetching for Flat",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "ncc build --source-map --license LICENSE --target es2020 lib/main.js",
+    "dist": "npm run build && npm run package",
+    "format": "prettier --write **/*.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/githubocto/flat.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/githubocto/flat/issues"
+  },
+  "homepage": "https://github.com/githubocto/flat#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/exec": "^1.0.4",
+    "@actions/github": "^4.0.0",
+    "axios": "^0.21.1",
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.31",
+    "zod": "^3.0.0-alpha.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "@types/node": "^14.14.28",
+    "@vercel/ncc": "^0.27.0",
+    "jest": "^26.6.3",
+    "jest-circus": "^26.6.3",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.5.2",
+    "typescript": "^4.1.5"
+  }
+}

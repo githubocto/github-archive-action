@@ -1,0 +1,13 @@
+name: 'Flat Data'
+description: 'The GitHub action which powers data fetching for Flat'
+author: 'GitHub OCTO'
+inputs:
+  branch:
+    description: 'The branch into which to commit events containing GitHub-specific activity data.'
+    default: 'github-meta'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+branding:
+  color: 'purple'
+  icon: 'archive'
