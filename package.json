@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "package": "ncc build --source-map --license LICENSE --target es2020 lib/main.js",
+    "package": "ncc build -e sqlite3 --source-map --license LICENSE --target es2020 lib/main.js",
     "dist": "npm run build && npm run package",
     "format": "prettier --write **/*.ts"
   },
@@ -21,12 +21,8 @@
   "dependencies": {
     "@actions/core": "^1.2.6",
     "@actions/exec": "^1.0.4",
-    "@actions/github": "^4.0.0",
-    "axios": "^0.21.1",
     "sqlite": "^4.0.21",
-    "sqlite3": "^5.0.2",
-    "typeorm": "^0.2.31",
-    "zod": "^3.0.0-alpha.4"
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
