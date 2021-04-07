@@ -30,10 +30,15 @@ async function run(): Promise<void> {
 
   // Create the oprhan github-meta branch if it doesn't exist
   const branch = core.getInput('branch')
-  const branchExists =
-    execSync(`git branch --list ${branch}`).toString().trim() !== ''
+  const branchExists = await exec('git', [
+    'fetch',
+    'origin',
+    branch,
+    '--depth',
+    '1',
+  ])
 
-  if (!branchExists) {
+  if (branchExists !== 0) {
     core.info(`No ${branch} branch exists, creating...`)
     await exec('git', ['checkout', '--orphan', branch])
     await exec('git', ['rm', '-rf', '.'])
@@ -46,7 +51,6 @@ async function run(): Promise<void> {
   } else {
     core.info(`Checking out ${branch}`)
     await exec('git', ['checkout', '-t', `origin/${branch}`])
-    await exec('git', ['pull'])
   }
 
   // open the database
