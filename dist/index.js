@@ -35,6 +35,14 @@ const exec_1 = __nccwpck_require__(1514);
 const child_process_1 = __nccwpck_require__(3129);
 const sqlite3_1 = __importDefault(__nccwpck_require__(4946));
 const sqlite_1 = __nccwpck_require__(2515);
+const dbfile = 'github-archive.db';
+const events = [
+    'issues',
+    'issue_comment',
+    'pull_request',
+    'pull_request_review',
+    'pull_request_review_comment',
+];
 async function run() {
     core.info('[INFO] Usage https://github.com/githubocto/github-archive-action#readme');
     core.startGroup('Setup');
@@ -63,17 +71,39 @@ async function run() {
     }
     // open the database
     const db = await sqlite_1.open({
-        filename: 'github-archive.db',
+        filename: dbfile,
         driver: sqlite3_1.default.Database,
     });
+    // create tables if they don't exist
     await db.run(`
-  CREATE TABLE IF NOT EXISTS issues (
+  CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY,
-    timestamp TEXT NOT NULL,
+    timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    kind TEXT NOT NULL
     event TEXT NOT NULL
   );`);
     core.endGroup();
+    core.startGroup('Capture event');
+    for await (const e of events) {
+        core.debug(`Checking for "${e}" event...`);
+        const payload = core.getInput(e);
+        if (payload === '') {
+            // no event
+            return;
+        }
+        await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
+            e,
+            payload,
+        });
+        core.info(`Captured ${e} event`);
+    }
+    core.endGroup();
+    core.startGroup('Commit and close db');
     await db.close();
+    await exec_1.exec('git', ['add', dbfile]);
+    await exec_1.exec('git', ['commit', '-m', 'Adding data to repo']);
+    await exec_1.exec('git', ['push']);
+    core.endGroup();
 }
 run().catch(error => {
     core.setFailed('Workflow failed! ' + error.message);
