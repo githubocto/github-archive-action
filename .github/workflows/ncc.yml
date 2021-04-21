@@ -18,9 +18,9 @@ jobs:
           npm run dist
       - name: Commit and push if it changed
         run: |-
-          git config user.name "Automated"
+          git config user.name "Automated Build"
           git config user.email "actions@users.noreply.github.com"
           git add -A
           timestamp=$(date -u)
-          git commit -m "Latest data: ${timestamp}" || exit 0
+          git commit -m "npm run dist" || exit 0
           git push
