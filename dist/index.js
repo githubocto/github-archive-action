@@ -35,7 +35,8 @@ const github = __importStar(__nccwpck_require__(5438));
 const exec_1 = __nccwpck_require__(1514);
 const sqlite3_1 = __importDefault(__nccwpck_require__(4946));
 const sqlite_1 = __nccwpck_require__(2515);
-const dbfile = 'github-archive.db';
+const nanoid_1 = __nccwpck_require__(9140);
+const dbfile = 'github-archive.sqlite';
 const events = [
     'issues',
     'issue_comment',
@@ -44,6 +45,8 @@ const events = [
     'pull_request_review_comment',
 ];
 async function run() {
+    const now = new Date().toISOString();
+    const id = nanoid_1.nanoid();
     core.info('[INFO] Usage https://github.com/githubocto/github-archive-action#readme');
     core.startGroup('Setup');
     // Configure git user/email
@@ -55,64 +58,57 @@ async function run() {
         `${username}@users.noreply.github.com`,
     ]);
     core.debug('Configured git user.name/user.email');
-    // Create the oprhan github-meta branch if it doesn't exist
-    const branch = core.getInput('branch');
-    const branchExists = await exec_1.exec('git', [
-        'fetch',
-        'origin',
-        branch,
-        '--depth',
-        '1',
-    ]);
-    if (branchExists !== 0) {
-        core.info(`No ${branch} branch exists, creating...`);
-        await exec_1.exec('git', ['checkout', '--orphan', branch]);
-        await exec_1.exec('git', ['rm', '-rf', '.']);
-        await exec_1.exec('git', [
-            'commit',
-            '--allow-empty',
-            '-m',
-            `Creating ${branch} branch`,
-        ]);
+    core.endGroup();
+    const eventName = github.context.eventName;
+    if (!events.includes(eventName)) {
+        throw new Error(`Unsupported event type: ${eventName}`);
     }
-    else {
-        core.info(`Checking out ${branch}`);
-        await exec_1.exec('git', ['checkout', '-t', `origin/${branch}`]);
-    }
-    // open the database
-    const db = await sqlite_1.open({
-        filename: dbfile,
-        driver: sqlite3_1.default.Database,
-    });
-    // create tables if they don't exist
-    await db.run(`
+    // Actions can be triggered in parallel
+    // As a result, several invocations of this code might be
+    // executing right now.
+    // We could figure out how to merge sqlite databases; there
+    // is even some prior art in https://github.com/cannadayr/git-sqlite
+    // The simple approach of "if our push is refused, pull and try again"
+    // is probably going to be sufficient.
+    while (true) {
+        // open the database
+        const db = await sqlite_1.open({
+            filename: dbfile,
+            driver: sqlite3_1.default.Database,
+        });
+        // create tables if they don't exist
+        await db.run(`
   CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY,
-    timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id TEXT PRIMARY KEY,
+    timestamp TEXT NOT NULL,
     kind TEXT NOT NULL,
     event TEXT NOT NULL
   );`);
-    core.endGroup();
-    core.startGroup('Capture event');
-    for await (const e of events) {
-        core.debug(`Checking for "${e}" event...`);
-        if (github.context.eventName !== e) {
-            // not this event
-            continue;
-        }
-        await db.run('INSERT INTO events (kind, event) values (:e, :payload)', {
-            ':e': e,
+        await db.run('INSERT INTO events (id, timestamp, kind, event) values (:id, :timestamp, :e, :payload)', {
+            ':id': id,
+            ':timestamp': now,
+            ':e': eventName,
             ':payload': JSON.stringify(github.context.payload),
         });
-        core.info(`Captured ${e} event`);
+        await db.close();
+        await exec_1.exec('git', ['add', dbfile]);
+        await exec_1.exec('git', [
+            'commit',
+            '-m',
+            `Capturing event ${eventName} (id: ${id})`,
+        ]);
+        const code = await exec_1.exec('git', ['push']);
+        if (code === 0) {
+            // success! We're finished.
+            core.info('Success!');
+            break;
+        }
+        else {
+            core.info('Retrying because of conflicts...');
+            await exec_1.exec('git', ['reset', '--hard', 'HEAD']);
+            await exec_1.exec('git', ['pull']);
+        }
     }
-    core.endGroup();
-    core.startGroup('Commit and close db');
-    await db.close();
-    await exec_1.exec('git', ['add', dbfile]);
-    await exec_1.exec('git', ['commit', '-m', 'Adding data to repo']);
-    await exec_1.exec('git', ['push', 'origin', branch]);
-    core.endGroup();
 }
 run().catch(error => {
     core.setFailed('Workflow failed! ' + error.message);
@@ -20238,6 +20234,106 @@ module.exports = eval("require")("encoding");
 
 /***/ }),
 
+/***/ 9140:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+let crypto = __nccwpck_require__(6417)
+
+let { urlAlphabet } = __nccwpck_require__(3861)
+
+// It is best to make fewer, larger requests to the crypto module to
+// avoid system call overhead. So, random numbers are generated in a
+// pool. The pool is a Buffer that is larger than the initial random
+// request size by this multiplier. The pool is enlarged if subsequent
+// requests exceed the maximum buffer size.
+const POOL_SIZE_MULTIPLIER = 32
+let pool, poolOffset
+
+let random = bytes => {
+  if (!pool || pool.length < bytes) {
+    pool = Buffer.allocUnsafe(bytes * POOL_SIZE_MULTIPLIER)
+    crypto.randomFillSync(pool)
+    poolOffset = 0
+  } else if (poolOffset + bytes > pool.length) {
+    crypto.randomFillSync(pool)
+    poolOffset = 0
+  }
+
+  let res = pool.subarray(poolOffset, poolOffset + bytes)
+  poolOffset += bytes
+  return res
+}
+
+let customRandom = (alphabet, size, getRandom) => {
+  // First, a bitmask is necessary to generate the ID. The bitmask makes bytes
+  // values closer to the alphabet size. The bitmask calculates the closest
+  // `2^31 - 1` number, which exceeds the alphabet size.
+  // For example, the bitmask for the alphabet size 30 is 31 (00011111).
+  let mask = (2 << (31 - Math.clz32((alphabet.length - 1) | 1))) - 1
+  // Though, the bitmask solution is not perfect since the bytes exceeding
+  // the alphabet size are refused. Therefore, to reliably generate the ID,
+  // the random bytes redundancy has to be satisfied.
+
+  // Note: every hardware random generator call is performance expensive,
+  // because the system call for entropy collection takes a lot of time.
+  // So, to avoid additional system calls, extra bytes are requested in advance.
+
+  // Next, a step determines how many random bytes to generate.
+  // The number of random bytes gets decided upon the ID size, mask,
+  // alphabet size, and magic number 1.6 (using 1.6 peaks at performance
+  // according to benchmarks).
+  let step = Math.ceil((1.6 * mask * size) / alphabet.length)
+
+  return () => {
+    let id = ''
+    while (true) {
+      let bytes = getRandom(step)
+      // A compact alternative for `for (let i = 0; i < step; i++)`.
+      let i = step
+      while (i--) {
+        // Adding `|| ''` refuses a random byte that exceeds the alphabet size.
+        id += alphabet[bytes[i] & mask] || ''
+        if (id.length === size) return id
+      }
+    }
+  }
+}
+
+let customAlphabet = (alphabet, size) => customRandom(alphabet, size, random)
+
+let nanoid = (size = 21) => {
+  let bytes = random(size)
+  let id = ''
+  // A compact alternative for `for (let i = 0; i < size; i++)`.
+  while (size--) {
+    // It is incorrect to use bytes exceeding the alphabet size.
+    // The following mask reduces the random byte in the 0-255 value
+    // range to the 0-63 value range. Therefore, adding hacks, such
+    // as empty string fallback or magic numbers, is unneccessary because
+    // the bitmask trims bytes down to the alphabet size.
+    id += urlAlphabet[bytes[size] & 63]
+  }
+  return id
+}
+
+module.exports = { nanoid, customAlphabet, customRandom, urlAlphabet, random }
+
+
+/***/ }),
+
+/***/ 3861:
+/***/ ((module) => {
+
+// This alphabet uses `A-Za-z0-9_-` symbols. The genetic algorithm helped
+// optimize the gzip compression for this alphabet.
+let urlAlphabet =
+  'ModuleSymbhasOwnPr-0123456789ABCDEFGHNRVfgctiUvz_KqYTJkLxpZXIjQW'
+
+module.exports = { urlAlphabet }
+
+
+/***/ }),
+
 /***/ 282:
 /***/ ((module) => {
 
@@ -20275,6 +20371,14 @@ module.exports = require("buffer");;
 
 "use strict";
 module.exports = require("child_process");;
+
+/***/ }),
+
+/***/ 6417:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("crypto");;
 
 /***/ }),
 
