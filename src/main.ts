@@ -83,7 +83,7 @@ async function run(): Promise<void> {
       break
     } catch (error) {
       core.info('Retrying because of conflicts...')
-      await exec('git', ['reset', '--hard', 'HEAD'])
+      await exec('git', ['reset', '--hard', 'HEAD^'])
       await exec('git', ['pull'])
     }
   }
