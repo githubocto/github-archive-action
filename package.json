@@ -1,7 +1,7 @@
 {
-  "name": "flat",
-  "version": "1.2.0",
-  "description": "The GitHub action which powers data fetching for Flat",
+  "name": "github-archive-action",
+  "version": "1.0",
+  "description": "An action which archives GitHub data into your repository",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -11,13 +11,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/githubocto/flat.git"
+    "url": "git+https://github.com/githubocto/github-archive-action.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/githubocto/flat/issues"
+    "url": "https://github.com/githubocto/github-archive-action/issues"
   },
-  "homepage": "https://github.com/githubocto/flat#readme",
+  "homepage": "https://github.com/githubocto/github-archive-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.6",
     "@actions/exec": "^1.0.4",
