@@ -76,12 +76,12 @@ async function run(): Promise<void> {
       '-m',
       `Capturing event ${eventName} (id: ${id})`,
     ])
-    const code = await exec('git', ['push'])
-    if (code === 0) {
-      // success! We're finished.
+    try {
+      await exec('git', ['push'])
+      // if the push succeeded, we're finished
       core.info('Success!')
       break
-    } else {
+    } catch (error) {
       core.info('Retrying because of conflicts...')
       await exec('git', ['reset', '--hard', 'HEAD'])
       await exec('git', ['pull'])
