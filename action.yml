@@ -1,10 +1,6 @@
 name: 'GitHub Archive Action'
 description: 'It exports your GitHub data to a SQLite database in a branch of your repository'
 author: 'GitHub OCTO'
-inputs:
-  branch:
-    description: 'The branch into which to commit events containing GitHub-specific activity data.'
-    default: 'github-meta'
 runs:
   using: 'node12'
   main: 'dist/index.js'
