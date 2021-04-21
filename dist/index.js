@@ -37,13 +37,6 @@ const sqlite3_1 = __importDefault(__nccwpck_require__(4946));
 const sqlite_1 = __nccwpck_require__(2515);
 const nanoid_1 = __nccwpck_require__(9140);
 const dbfile = 'github-archive.sqlite';
-const events = [
-    'issues',
-    'issue_comment',
-    'pull_request',
-    'pull_request_review',
-    'pull_request_review_comment',
-];
 async function run() {
     const now = new Date().toISOString();
     const id = nanoid_1.nanoid();
@@ -60,9 +53,6 @@ async function run() {
     core.debug('Configured git user.name/user.email');
     core.endGroup();
     const eventName = github.context.eventName;
-    if (!events.includes(eventName)) {
-        throw new Error(`Unsupported event type: ${eventName}`);
-    }
     // Actions can be triggered in parallel
     // As a result, several invocations of this code might be
     // executing right now.
@@ -92,11 +82,7 @@ async function run() {
         });
         await db.close();
         await exec_1.exec('git', ['add', dbfile]);
-        await exec_1.exec('git', [
-            'commit',
-            '-m',
-            `Capturing event ${eventName} (id: ${id})`,
-        ]);
+        await exec_1.exec('git', ['commit', '-m', `${eventName} ${id}`]);
         try {
             await exec_1.exec('git', ['push']);
             // if the push succeeded, we're finished
