@@ -97,13 +97,13 @@ async function run() {
             '-m',
             `Capturing event ${eventName} (id: ${id})`,
         ]);
-        const code = await exec_1.exec('git', ['push']);
-        if (code === 0) {
-            // success! We're finished.
+        try {
+            await exec_1.exec('git', ['push']);
+            // if the push succeeded, we're finished
             core.info('Success!');
             break;
         }
-        else {
+        catch (error) {
             core.info('Retrying because of conflicts...');
             await exec_1.exec('git', ['reset', '--hard', 'HEAD']);
             await exec_1.exec('git', ['pull']);
