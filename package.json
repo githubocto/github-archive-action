@@ -1,6 +1,6 @@
 {
   "name": "github-archive-action",
-  "version": "1.0",
+  "version": "1.0.0",
   "description": "An action which archives GitHub data into your repository",
   "main": "index.js",
   "scripts": {
