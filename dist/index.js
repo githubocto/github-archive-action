@@ -105,7 +105,7 @@ async function run() {
         }
         catch (error) {
             core.info('Retrying because of conflicts...');
-            await exec_1.exec('git', ['reset', '--hard', 'HEAD']);
+            await exec_1.exec('git', ['reset', '--hard', 'HEAD^']);
             await exec_1.exec('git', ['pull']);
         }
     }
