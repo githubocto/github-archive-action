@@ -6,13 +6,6 @@ import { open } from 'sqlite'
 import { nanoid } from 'nanoid'
 
 const dbfile = 'github-archive.sqlite'
-const events = [
-  'issues',
-  'issue_comment',
-  'pull_request',
-  'pull_request_review',
-  'pull_request_review_comment',
-]
 async function run(): Promise<void> {
   const now = new Date().toISOString()
   const id = nanoid()
@@ -33,10 +26,6 @@ async function run(): Promise<void> {
   core.endGroup()
 
   const eventName = github.context.eventName
-  if (!events.includes(eventName)) {
-    throw new Error(`Unsupported event type: ${eventName}`)
-  }
-
   // Actions can be triggered in parallel
   // As a result, several invocations of this code might be
   // executing right now.
@@ -71,11 +60,7 @@ async function run(): Promise<void> {
     )
     await db.close()
     await exec('git', ['add', dbfile])
-    await exec('git', [
-      'commit',
-      '-m',
-      `Capturing event ${eventName} (id: ${id})`,
-    ])
+    await exec('git', ['commit', '-m', `${eventName} ${id}`])
     try {
       await exec('git', ['push'])
       // if the push succeeded, we're finished
